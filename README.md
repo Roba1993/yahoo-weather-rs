@@ -1,6 +1,7 @@
 # yahoo-weather-rs
 
-The yahoo-weather-rs create downloads the actual weather data for a given location and transforms it into rust data structures.
+The `yahoo-weather-rs` create downloads the actual weather data for a given location and transforms it into rust data structures.
+
 ---
 ## Usage
 Add `yahoo-weather-rs` as a dependency in `Cargo.toml`:
@@ -21,6 +22,7 @@ fn main() {
     println!("Weather: {:?}", weather);
 }
 ```
+
 ---
 ## License
 Copyright © 2016 Robert Schütte
