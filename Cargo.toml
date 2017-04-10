@@ -1,0 +1,11 @@
+[package]
+name = "yahoo-weather"
+version = "0.1.0"
+authors = ["Robert Schütte <schuetterobert@gmail.com>"]
+
+[dependencies]
+curl = "0.4"
+chrono = "0.3"
+measurements = "0.3"
+serde_json = "0.9"
+quick-error = "1.1"
