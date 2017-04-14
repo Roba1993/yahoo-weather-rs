@@ -1,20 +1,20 @@
 #[macro_use] extern crate quick_error;
+#[macro_use] extern crate serde_derive;
+extern crate serde;
 extern crate serde_json;
 extern crate chrono;
-extern crate measurements;
 extern crate curl;
 
 mod error;
 
+use serde_json::Value;
 use chrono::{NaiveDate, NaiveTime};
-use measurements::Temperature;
 use curl::easy::Easy;
 use std::str;
+use std::str::FromStr;
 use std::cell::RefCell;
 use std::rc::Rc;
-use serde_json::Value;
 use error::Error;
-use std::str::FromStr;
 
 
 pub fn get_weather<L: Into<&'static str>>(location: L) -> Result<Weather, Error> {
@@ -23,30 +23,25 @@ pub fn get_weather<L: Into<&'static str>>(location: L) -> Result<Weather, Error>
     // define the root data point
     let json = json.pointer("/query/results/channel").ok_or(Error::NoData)?;
 
-    // get the temperature unit
-    let temp_unit = json.pointer("/units/temperature").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?;
-    if temp_unit != "F" {
-        return Err(Error::Other("Only F from the API is supported right now"));
-    }
-
     // set the weather
     let mut weather = Weather {
-        temp: Temperature::from_fahrenheit(f64::from_str(json.pointer("/item/condition/temp").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?)?),
-        condition_code:  usize::from_str(json.pointer("/item/condition/code").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?)?,
-        condition: json.pointer("/item/condition/text").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?.to_string(),
-        sunrise: NaiveTime::parse_from_str(json.pointer("/astronomy/sunrise").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?, "%l:%M %P")?,
-        sunset: NaiveTime::parse_from_str(json.pointer("/astronomy/sunset").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?, "%l:%M %P")?,
+        temp: json.pointer("/item/condition/temp").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        temp_unit: json.pointer("/units/temperature").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        condition_code: usize::from_str(json.pointer("/item/condition/code").and_then(|v| v.as_str()).unwrap_or("")).unwrap_or(3200),
+        condition: json.pointer("/item/condition/text").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        sunrise: NaiveTime::parse_from_str(json.pointer("/astronomy/sunrise").and_then(|v| v.as_str()).unwrap_or(""), "%l:%M %P")?,
+        sunset: NaiveTime::parse_from_str(json.pointer("/astronomy/sunset").and_then(|v| v.as_str()).unwrap_or(""), "%l:%M %P")?,
         forecast: vec!()
     };
 
     // fill the forecast list with the data from the json
     for point in json.pointer("/item/forecast").ok_or(Error::NoData)?.as_array().ok_or(Error::NoData)? {
         weather.forecast.push(DataPoint {
-            date: NaiveDate::parse_from_str(point.get("date").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?, "%d %b %Y")?,
-            temp_high: Temperature::from_fahrenheit(f64::from_str(point.get("high").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?)?),
-            temp_low: Temperature::from_fahrenheit(f64::from_str(point.get("low").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?)?),
-            condition_code: usize::from_str(point.get("code").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?)?,
-            condition: point.get("text").ok_or(Error::NoData)?.as_str().ok_or(Error::NoData)?.to_string()
+            date: NaiveDate::parse_from_str(point.get("date").and_then(|v| v.as_str()).unwrap_or(""), "%d %b %Y")?,
+            temp_high: point.get("high").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            temp_low: point.get("low").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            condition_code: usize::from_str(point.get("code").and_then(|v| v.as_str()).unwrap_or("")).unwrap_or(3200),
+            condition: point.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string(),
         });
     }
 
@@ -85,9 +80,10 @@ fn get_raw_data<L: Into<&'static str>>(location: L) -> Result<String, Error> {
     Ok(x)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Weather {
-    temp: Temperature,
+    temp: String,
+    temp_unit: String,
     condition_code: usize,
     condition: String,
     sunrise: NaiveTime,
@@ -95,11 +91,11 @@ pub struct Weather {
     forecast: Vec<DataPoint>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DataPoint {
     date: NaiveDate,
-    temp_high: Temperature,
-    temp_low: Temperature,
+    temp_high: String,
+    temp_low: String,
     condition_code: usize,
     condition: String
 }
