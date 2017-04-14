@@ -5,7 +5,7 @@ extern crate serde_json;
 extern crate chrono;
 extern crate curl;
 
-mod error;
+pub mod error;
 
 use serde_json::Value;
 use chrono::{NaiveDate, NaiveTime};
