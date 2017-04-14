@@ -17,7 +17,7 @@ use std::rc::Rc;
 use error::Error;
 
 
-pub fn get_weather<L: Into<&'static str>>(location: L) -> Result<Weather, Error> {
+pub fn get_weather<L: Into<String>>(location: L) -> Result<Weather, Error> {
     // get the json values
     let json: Value = serde_json::from_str(&get_raw_data(location)?)?;
     // define the root data point
@@ -50,7 +50,7 @@ pub fn get_weather<L: Into<&'static str>>(location: L) -> Result<Weather, Error>
 
 /// Request the data fromt the yahoo api and return the
 /// result as String.
-fn get_raw_data<L: Into<&'static str>>(location: L) -> Result<String, Error> {
+fn get_raw_data<L: Into<String>>(location: L) -> Result<String, Error> {
     // define the empty contet string
     let content = Rc::new(RefCell::new("".to_string()));
 
