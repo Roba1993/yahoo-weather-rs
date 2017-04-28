@@ -3,18 +3,19 @@
 extern crate serde;
 extern crate serde_json;
 extern crate chrono;
-extern crate curl;
+extern crate hyper;
 
 pub mod error;
 
 use serde_json::Value;
 use chrono::{NaiveDate, NaiveTime};
-use curl::easy::Easy;
 use std::str;
 use std::str::FromStr;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::io::Read;
 use error::Error;
+use hyper::Client;
+use hyper::status::StatusCode;
+
 
 
 pub fn get_weather<L: Into<String>>(location: L) -> Result<Weather, Error> {
@@ -51,33 +52,23 @@ pub fn get_weather<L: Into<String>>(location: L) -> Result<Weather, Error> {
 /// Request the data fromt the yahoo api and return the
 /// result as String.
 fn get_raw_data<L: Into<String>>(location: L) -> Result<String, Error> {
-    // define the empty contet string
-    let content = Rc::new(RefCell::new("".to_string()));
+    // request the data
+    let client = Client::new();
+    let mut res = client.get(
+        format!("http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22{}%2C%20de%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys", location.into())
+        .as_str())
+        .send()?;
 
-    // prepare curl to load the data
-    let mut curl = Easy::new();
-    // define the url
-    curl.url(format!("https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22{}%2C%20de%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys", location.into()).as_str()).unwrap();
-    // define how to handle the content
-    let mut transfer = curl.transfer();
+    // check the status code response
+    if res.status != StatusCode::Ok {
+        return Err(Error::Other("No status code ok, returned"));
+    }
 
-    // define the value return
-    transfer.write_function(|data| {
-        match str::from_utf8(data) {
-            Ok(v) => {
-                content.borrow_mut().push_str(v);
-                return Ok(data.len());
-            },
-            Err(_) => Ok(data.len())
-        }
-    })?;
+    // read the response body
+    let mut buf = String::new();
+    res.read_to_string(&mut buf)?;
 
-    // execute
-    transfer.perform()?;
-
-    // return the content
-    let x = content.borrow_mut().clone();
-    Ok(x)
+    Ok(buf)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -9,4 +9,4 @@ serde = "0.9"
 serde_derive = "0.9"
 serde_json = "0.9"
 chrono = { version = "0.3", features = ["serde"] }
-curl = "0.4"
+hyper = "0.10.9"

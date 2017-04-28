@@ -1,5 +1,5 @@
 use std::{io, num};
-use curl;
+use hyper;
 use serde_json;
 use chrono;
 
@@ -12,10 +12,10 @@ quick_error! {
             display("I/O error: {}", err)
             cause(err)
         }
-        Curl(err: curl::Error) {
+        Curl(err: hyper::Error) {
             from()
-            description("curl error")
-            display("Curl error: {}", err)
+            description("hyper error")
+            display("Hyper error: {}", err)
             cause(err)
         }
         Json(err: serde_json::Error) {
