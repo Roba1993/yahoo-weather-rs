@@ -7,7 +7,7 @@ The `yahoo-weather-rs` create downloads the actual weather data for a given loca
 Add `yahoo-weather-rs` as a dependency in `Cargo.toml`:
 ```toml
 [dependencies]
-yahoo-weather-rs = { git = "https://github.com/Roba1993/yahoo-weather-rs" }
+yahoo-weather = { git = "https://github.com/Roba1993/yahoo-weather-rs" }
 ```
 
 Use the `get_weather()` function to get the weather data.
