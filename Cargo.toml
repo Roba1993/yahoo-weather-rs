@@ -1,7 +1,14 @@
 [package]
 name = "yahoo-weather"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Robert Schütte <schuetterobert@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/Roba1993/yahoo-weather-rs"
+homepage = "https://github.com/Roba1993/yahoo-weather-rs"
+description = """
+Easy yahoo weather API access for rust
+"""
 
 [dependencies]
 quick-error = "1.1"
